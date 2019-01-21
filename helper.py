@@ -91,12 +91,22 @@ def RMSE(validation_points, prediction_points):
    return np.sqrt(np.mean((x - y)**2))
 
 
-def split_data(df):
-    #2 years for validation and test, don't want to get too close to 2009.
+def split_data(df,time_loop):
+
+    """Splits data into train, validation & test. Designed to get
+    #2 years for validation and test, didn't want to get too close to 2009.
+
+    INPUTS:
+        df = dataframe to split
+        time_loop = either 52 or 12 for weekly or monthly data to equal a year
+    OUTPUTS:
+        3 dfs with the data split into time ranges
+    """
+
     df_len = df.shape[0]
-    train = df.iloc[:df_len-52*4,:]
-    validation = df.iloc[df_len-52*4:df_len-52*2,:]
-    test = df.iloc[df_len-52*2:]
+    train = df.iloc[:df_len-time_loop*4,:]
+    validation = df.iloc[df_len-time_loop*4:df_len-time_loop*2,:]
+    test = df.iloc[df_len-time_loop*2:]
     total_len = train.shape[0]+test.shape[0]+validation.shape[0]
     if df_len == total_len:
         return train, validation, test
