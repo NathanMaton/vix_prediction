@@ -8,14 +8,15 @@ import seaborn as sns
 import statsmodels.tsa.stattools as ts
 import statsmodels.tsa.api as smt
 from statsmodels.tsa.arima_model import ARIMA
+from datetime import datetime
 
 
-def appendDay(x):
+def appendDay(x): ## helper function for clean prime
     if len(x) == 1:
         x.append(1)
     return x
 
-def createstr(cell):
+def createstr(cell): ## helper function for clean prime
     nc = []
     for i in cell:
         i=str(i)
@@ -23,10 +24,9 @@ def createstr(cell):
     ns = nc[0] + ', ' + nc[1] + ', ' + nc[2]
     return ns
 
-# next step is to clean my prime rate data
-def cleanprime(df):
+def cleanprime(df): ## Used to create clean_prime.csv
     df['MonthYear'] = df['Month'].str.split(',')
-    #somehow created MonthDay, forget how
+    #somehow created MonthDay, would need to re-write this line to re-use this function.
     df['MonthDay'] = df['MonthDay'].apply(appendDay)
     df['DateTime'] = df['MonthDay'] + df['MonthYear']
     df['DateTime'].apply(lambda x: x.insert(2,x.pop()))
@@ -40,6 +40,17 @@ def cleanprime(df):
     df = df.drop(['index','Month','MonthYear','MonthDay','DateTime'],axis=1)
     df['Prime Rate'] =df['Prime Rate'].astype(float)
 
+def vix_prime_combine(monthly_vix,prime):
+    prime.datetime = pd.to_datetime(prime['datetime'])
+    prime.set_index('datetime',inplace=True)
+    monthly_vix['dt']= monthly_vix.index
+    monthly_vix.dt = monthly_vix.dt.apply(lambda dt: dt.replace(day=1))
+    monthly_vix.set_index('dt', inplace=True)
+    vp_df = monthly_vix.join(prime,how='outer')
+    vp_df = vp_df.drop(pd.Timestamp('1900-02-01'))
+    vp_df.iloc[1,:] = float(10)
+    return vp_df
+
 def clean_data():
     vix = pd.read_csv('vix_prices.csv')
     prime = pd.read_csv('clean_prime.csv')
@@ -49,7 +60,8 @@ def clean_data():
     vix_close = vix.loc[:,['date','vix_close']]
     vix_close.set_index('date',inplace=True)
     weekly_vix = vix_close.resample('W').mean()
-    return vix_close, prime, weekly_vix
+    monthly_vix = vix_close.resample('M').mean()
+    return vix_close, prime, weekly_vix, monthly_vix
 
 def dftest(timeseries):
     dftest = ts.adfuller(timeseries, autolag='AIC')
