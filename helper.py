@@ -10,9 +10,39 @@ import statsmodels.tsa.api as smt
 from statsmodels.tsa.arima_model import ARIMA
 
 
+def appendDay(x):
+    if len(x) == 1:
+        x.append(1)
+    return x
+
+def createstr(cell):
+    nc = []
+    for i in cell:
+        i=str(i)
+        nc.append(i)
+    ns = nc[0] + ', ' + nc[1] + ', ' + nc[2]
+    return ns
+
+# next step is to clean my prime rate data
+def cleanprime(df):
+    df['MonthYear'] = df['Month'].str.split(',')
+    #somehow created MonthDay, forget how
+    df['MonthDay'] = df['MonthDay'].apply(appendDay)
+    df['DateTime'] = df['MonthDay'] + df['MonthYear']
+    df['DateTime'].apply(lambda x: x.insert(2,x.pop()))
+    df['DateTime'].values[0] = ['January', '1', '1990', 'January 1']
+    df['DateTime'].apply(lambda x: x.pop())
+    df['DateTime2'] = df['DateTime']
+    df = df.drop(336)
+    df['DateTime2'] = df['DateTime2'].apply(createstr)
+    df.reset_index(inplace=True)
+    df['DateTime2'] = pd.to_datetime(df['DateTime2'])
+    df = df.drop(['index','Month','MonthYear','MonthDay','DateTime'],axis=1)
+    df['Prime Rate'] =df['Prime Rate'].astype(float)
+
 def clean_data():
     vix = pd.read_csv('vix_prices.csv')
-    prime = pd.read_csv('historic_prime_rates.csv')
+    prime = pd.read_csv('clean_prime.csv')
     vix['date'] = pd.to_datetime(vix['date'])
     vix.vix_close.replace(np.nan,vix.vix_close.mean(),inplace=True)
     vix.vix_close.isna().sum()
@@ -39,6 +69,16 @@ def dftest(timeseries):
     plt.title('Rolling Mean and Standard Deviation')
     plt.show(block=False)
 
+def RMSE(validation_points, prediction_points):
+   """
+   Calculate RMSE between two vectors
+   """
+   x = np.array(validation_points)
+   y = np.array(prediction_points)
+
+   return np.sqrt(np.mean((x - y)**2))
+
+
 def split_data(df):
     #2 years for validation and test, don't want to get too close to 2009.
     df_len = df.shape[0]
@@ -62,3 +102,23 @@ def optimize_ar(df, max_p):
     plt.hist(aic_res)
     np_aic_res = np.array(aic_res)
     return (np_aic_res.min(),np_aic_res.argmin()+1)
+
+def optimize_ar_rmse(df,val,tot, max_p):
+    """Takes in timeseries dataframe, outputs optimal p value for ARIMA"""
+    rmse = []
+    for i in range(1,max_p):
+        model = ARIMA(df, order=(i,0,0))
+        model_fit = model.fit()
+        val['preds'] = model_fit.predict(tot.shape[0]-52*4, tot.shape[0]-52*2, dynamic=False)
+        score = RMSE(val.vix_close.values,val.preds.values)
+        rmse.append(score)
+
+    plt.plot(rmse)
+    np_rmse = np.array(rmse)
+    return (np_rmse.min(),np_rmse.argmin()+1)
+
+def plot_preds(df,val,tot):
+    model = ARIMA(df, order=(13,0,0))
+    model_fit = model.fit()
+    val['preds'] = model_fit.predict(tot.shape[0]-52*4, tot.shape[0]-52*2, dynamic=False)
+    val[['vix_close','preds']].plot()
