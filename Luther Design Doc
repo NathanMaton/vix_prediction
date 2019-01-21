@@ -1,0 +1,21 @@
+The goal of my project is to predict the VIX using time series analysis and
+exogenous variables (I'm starting with the Federal Prime Rate history).
+
+My first goal is to test all of the models we've learned in class, I'm calling
+this my MVP. I completed that in a Jupyter Notebook with an RMSE of 5.2
+using ARIMA (really just AR). The graph looked bad though so I'm not satisfied.
+
+I also tried a SARIMAX model with my exogenous variable, but the RMSE was worse at
+21.7.
+
+My next goal will be to attempt the same things (simple time series, then with
+exogenous variables) using Facebook Prophet. Prophet had a RMSE of 9.
+
+After that I have a few more ideas:
+- Change data to % change instead of raw VIX values. Could also try this for prime Rate
+- Find an exogenous variable with more data
+- Take my learnings and stress test them on class data to see if I'm missing something
+- Change my problem to something easier to predict than stock market data?
+- Dive deeper into how VIX is calculated to see if I'm aggregating some stupid way
+- Read more tutorials?
+-https://www.kaggle.com/armamut/predicting-transactions-fb-prophet-tutorial

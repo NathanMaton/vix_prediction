@@ -90,6 +90,11 @@ def RMSE(validation_points, prediction_points):
 
    return np.sqrt(np.mean((x - y)**2))
 
+#got idea to try MAPE from here: https://towardsdatascience.com/implementing-facebook-prophet-efficiently-c241305405a3
+def MAPE(y_true,y_pred):
+    y_true,y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true-y_pred) / y_true)) * 100
+
 
 def split_data(df,time_loop):
 
@@ -144,3 +149,12 @@ def plot_preds(df,val,tot):
     model_fit = model.fit()
     val['preds'] = model_fit.predict(tot.shape[0]-52*4, tot.shape[0]-52*2, dynamic=False)
     val[['vix_close','preds']].plot()
+
+def format_prophet_data(train,validation):
+    p_train = train
+    p_train.columns = ['y']
+    p_train['ds']= p_train.index
+    p_validation = validation
+    p_validation['ds']=p_validation.index
+    p_validation.columns = ['y','ds']
+    return p_train,p_validation
