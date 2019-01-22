@@ -61,7 +61,10 @@ def clean_data():
     vix_close.set_index('date',inplace=True)
     weekly_vix = vix_close.resample('W').mean()
     monthly_vix = vix_close.resample('M').mean()
-    return vix_close, prime, weekly_vix, monthly_vix
+    pct = vix_close.vix_close.pct_change()
+    pct_df = pd.DataFrame(pct)
+    pct_df = pct_df.iloc[1:,:]
+    return pct_df, vix_close, prime, weekly_vix, monthly_vix
 
 def dftest(timeseries):
     dftest = ts.adfuller(timeseries, autolag='AIC')
@@ -126,23 +129,25 @@ def optimize_ar(df, max_p):
         model_fit = model.fit()
         aic_res.append(model_fit.aic)
 
-    plt.hist(aic_res)
+    #plt.hist(aic_res)
     np_aic_res = np.array(aic_res)
     return (np_aic_res.min(),np_aic_res.argmin()+1)
 
 def optimize_ar_rmse(df,val,tot, max_p):
     """Takes in timeseries dataframe, outputs optimal p value for ARIMA"""
     rmse = []
+    models = []
     for i in range(1,max_p):
         model = ARIMA(df, order=(i,0,0))
         model_fit = model.fit()
         val['preds'] = model_fit.predict(tot.shape[0]-52*4, tot.shape[0]-52*2, dynamic=False)
+        models.append(val)
         score = RMSE(val.vix_close.values,val.preds.values)
         rmse.append(score)
 
-    plt.plot(rmse)
+    #plt.plot(rmse)
     np_rmse = np.array(rmse)
-    return (np_rmse.min(),np_rmse.argmin()+1)
+    return (models, np_rmse.min(),np_rmse.argmin()+1)
 
 def plot_preds(df,val,tot):
     model = ARIMA(df, order=(13,0,0))
