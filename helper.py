@@ -48,7 +48,7 @@ def vix_prime_combine(monthly_vix,prime):
     monthly_vix.set_index('dt', inplace=True)
     vp_df = monthly_vix.join(prime,how='outer')
     vp_df = vp_df.drop(pd.Timestamp('1900-02-01'))
-    vp_df.iloc[1,:] = float(10)
+    vp_df.iloc[1,:] = monthly_vix.vix_close.mean()
     return vp_df
 
 def clean_data():
