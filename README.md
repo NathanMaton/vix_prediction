@@ -8,6 +8,6 @@ This time series analysis shows how to use many different techniques including a
 
 At the end of the project I concluded that predicting market volitility is challenging (as expected). In picking a great challenging project though I learned a lot of techniques I could apply to more typical time series analysis like forecasting sales and other business data.
 
-
+To learn more please read the Jupyter notebooks where I cover EDA, optimizing ARIMA models, SARIMAX models and my Facebook Prophet test.
 
 
