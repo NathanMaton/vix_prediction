@@ -41,6 +41,7 @@ def cleanprime(df): ## Used to create clean_prime.csv
     df['Prime Rate'] =df['Prime Rate'].astype(float)
 
 def vix_prime_combine(monthly_vix,prime):
+    """Takes in 2 data sources and outputs 1 df"""
     prime.datetime = pd.to_datetime(prime['datetime'])
     prime.set_index('datetime',inplace=True)
     monthly_vix['dt']= monthly_vix.index
@@ -53,6 +54,7 @@ def vix_prime_combine(monthly_vix,prime):
     return vp_df
 
 def clean_data():
+    """Performs basic data cleaning/loading tasks on vix & prime data"""
     vix = pd.read_csv('vix_prices.csv')
     prime = pd.read_csv('clean_prime.csv')
     vix['date'] = pd.to_datetime(vix['date'])
@@ -69,6 +71,9 @@ def clean_data():
     return pct_df, vix_close, prime, weekly_vix, monthly_vix
 
 def dftest(timeseries):
+    """This code is from a Metis lecture on testing for stationary data with the
+    Dickey Fuller test for time series analysis. It takes in a time series and outputs statistics and graphics
+    If the p value is <.05, then the data passes the test and is ready for ARMA models."""
     dftest = ts.adfuller(timeseries, autolag='AIC')
     dfoutput = pd.Series(dftest[0:4], index=['Test Statistic','p-value','Lags Used','Observations Used'])
     for key,value in dftest[4].items():
@@ -95,12 +100,6 @@ def RMSE(validation_points, prediction_points):
 
    return np.sqrt(np.mean((x - y)**2))
 
-#got idea to try MAPE from here: https://towardsdatascience.com/implementing-facebook-prophet-efficiently-c241305405a3
-def MAPE(y_true,y_pred):
-    y_true,y_pred = np.array(y_true), np.array(y_pred)
-    return np.mean(np.abs((y_true-y_pred) / y_true)) * 100
-
-
 def split_data(df,time_loop):
 
     """Splits data into train, validation & test. Designed to get
@@ -122,6 +121,16 @@ def split_data(df,time_loop):
         return train, validation, test
     else:
         return "Lengths don't match"
+
+### The functions below I ended up taking out of my notebook code
+
+#got idea to try MAPE from here: https://towardsdatascience.com/implementing-facebook-prophet-efficiently-c241305405a3
+def MAPE(y_true,y_pred):
+    y_true,y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true-y_pred) / y_true)) * 100
+
+
+
 
 def optimize_ar(df, max_p):
     """Takes in timeseries dataframe, outputs optimal p value for ARIMA"""
