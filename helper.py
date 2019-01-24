@@ -48,7 +48,8 @@ def vix_prime_combine(monthly_vix,prime):
     monthly_vix.set_index('dt', inplace=True)
     vp_df = monthly_vix.join(prime,how='outer')
     vp_df = vp_df.drop(pd.Timestamp('1900-02-01'))
-    vp_df.iloc[1,:] = monthly_vix.vix_close.mean()
+    vp_df.iloc[1,0] = monthly_vix.vix_close.mean()
+    vp_df.iloc[1,1] = float(10)
     return vp_df
 
 def clean_data():
@@ -59,6 +60,7 @@ def clean_data():
     vix.vix_close.isna().sum()
     vix_close = vix.loc[:,['date','vix_close']]
     vix_close.set_index('date',inplace=True)
+    vix_close = vix_close.sort_index()
     weekly_vix = vix_close.resample('W').mean()
     monthly_vix = vix_close.resample('M').mean()
     pct = vix_close.vix_close.pct_change()
