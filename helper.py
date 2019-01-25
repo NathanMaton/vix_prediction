@@ -59,7 +59,7 @@ def clean_data():
     pct = vix_close.vix_close.pct_change()
     pct_df = pd.DataFrame(pct)
     pct_df = pct_df.iloc[1:,:]
-    pct_df['prime'] = prime.prime_rate
+    pct_df['prime'] = prime.prime_rate.pct_change()
     pct_df.prime = pct_df.prime.fillna(method='ffill')
     pct_df.prime = pct_df.prime.fillna(value=10)
     weekly_pct = pct_df.resample('W').mean()
