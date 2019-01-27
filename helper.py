@@ -24,9 +24,10 @@ def createstr(cell): ## helper function for clean prime
     ns = nc[0] + ', ' + nc[1] + ', ' + nc[2]
     return ns
 
-def cleanprime(df): ## Used to create clean_prime.csv
+def cleanprime(df):
+    """This function cleans up the output of my scrapped prime data
+    converting date strings into datetime objects"""
     df['MonthYear'] = df['Month'].str.split(',')
-    #somehow created MonthDay, would need to re-write this line to re-use this function.
     df['MonthDay'] = df['MonthDay'].apply(appendDay)
     df['DateTime'] = df['MonthDay'] + df['MonthYear']
     df['DateTime'].apply(lambda x: x.insert(2,x.pop()))
@@ -47,23 +48,46 @@ def clean_data():
     vix = pd.read_csv('data/vix_prices.csv')
     prime = pd.read_csv('data/clean_prime.csv')
 
-    #cleans vix df
+    #turns prime into percent change & minor cleaning
+    prime['prime_rate'] = prime.prime_rate.pct_change()
+    prime['prime_rate'] = prime.prime_rate.fillna(value=0)
+    prime.iloc[1,0] = '1990-02-01'
+    prime['date'] = pd.to_datetime(prime['datetime'], format="%Y-%m-%d")
+    prime.set_index('date',inplace=True)
+    prime.drop('datetime',axis=1, inplace=True)
+
+    #cleans vix data
     vix['date'] = pd.to_datetime(vix['date'])
     vix.vix_close.replace(np.nan,vix.vix_close.mean(),inplace=True)
-    vix.vix_close.isna().sum()
     vix_close = vix.loc[:,['date','vix_close']]
     vix_close.set_index('date',inplace=True)
     vix_close = vix_close.sort_index()
+    original_vix = vix_close.copy()
+    vix_close.vix_close = vix_close.vix_close.pct_change()
+    vix_close['key'] = vix_close.index
 
-    #converts to weekly percent and cleans prime rate
-    pct = vix_close.vix_close.pct_change()
-    pct_df = pd.DataFrame(pct)
-    pct_df = pct_df.iloc[1:,:]
-    pct_df['prime'] = prime.prime_rate.pct_change()
-    pct_df.prime = pct_df.prime.fillna(method='ffill')
-    pct_df.prime = pct_df.prime.fillna(value=10)
+    #merges data together
+    pct_df = pd.merge(vix_close,prime,how='left',
+                    left_on=[vix_close.index.year, vix_close.index.month],
+                    right_on=[prime.index.year, prime.index.month])
+
+
+    pct_df = pct_df.set_index('key')
+    pct_df.drop(['key_0','key_1'],axis=1,inplace=True)
+    pct_df = pct_df.dropna() #drops ~60 of 7000 rows
+
+    #resamples to weekly data to avoid issues with weekend timestamps
     weekly_pct = pct_df.resample('W').mean()
-    return weekly_pct, vix_close
+    return weekly_pct, original_vix
+
+def split_data(weekly_pct):
+    df_len = weekly_pct.shape[0]
+    train_vix = weekly_pct.iloc[:df_len-52*4,0].values
+    train_prime = weekly_pct.iloc[:df_len-52*4,1].values
+    validation = weekly_pct.iloc[df_len-52*4:df_len-52*2,0].values
+    validation_prime = weekly_pct.iloc[df_len-52*4-1:df_len-52*2-1,0].values
+    test = weekly_pct.iloc[df_len-52*2:,0]
+    return train_vix, train_prime, validation, validation_prime, test
 
 def dftest(timeseries):
     """This code is from a Metis lecture on testing for stationary data with the
@@ -93,4 +117,4 @@ def RMSE(validation_points, prediction_points):
    x = np.array(validation_points)
    y = np.array(prediction_points)
 
-   return np.sqrt(np.mean((x - y)**2))
+   return np.sqrt(np.mean((y-x)**2))
