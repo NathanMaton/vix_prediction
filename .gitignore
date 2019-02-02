@@ -5,3 +5,4 @@ __pycache__/
 data/
 .gitignore
 .ipynb_checkpoints/
+qget.py
