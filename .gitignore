@@ -2,7 +2,5 @@ tom.txt
 .DS_Store
 Luther Questions 1.18.19
 __pycache__/
-data/
-.gitignore
 .ipynb_checkpoints/
 qget.py
